@@ -4,7 +4,7 @@
 A demo of enabling Live Text interactions with images using two different approaches.
 
 - Built-in with VisionKit & UIKit
-- Custom with SwiftUI, Vision, NSDataDetector
+- Custom with SwiftUI, Vision, DataDetector
 
 For more details, please refer to my blog: [SwiftUI: Live Text Interactions with Images. Built-In Vs Custom.]()
 

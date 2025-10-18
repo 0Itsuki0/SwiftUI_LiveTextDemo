@@ -36,7 +36,7 @@ struct ContentView: View {
                 
                 Text("""
             **Custom Version**
-                - Use SwiftUI, Vision, and `NSDataDetector`
+                - Use SwiftUI, Vision, and `DataDetector`
                 - Able to support any `VisionRequest`
                 - Able to add interactions based on our needs. Copy, Open URL, and etc.
                 - Able to customize UI.

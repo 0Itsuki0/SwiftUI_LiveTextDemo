@@ -7,7 +7,7 @@
 
 import SwiftUI
 import Vision
-
+import DataDetection
 
 struct CustomLiveTextDemo: View {
     @Environment(\.openURL) private var openURL
@@ -169,85 +169,80 @@ struct CustomLiveTextDemo: View {
 
     }
     
-    private func extractLinkFromData(_ extractedData: [NSTextCheckingResult]) -> [URL] {
-        let application = UIApplication.shared
-        let urls = extractedData.filter({$0.url != nil}).map({$0.url!})
-            .filter({application.canOpenURL($0)})
+    private func extractLinkFromData(_ extractedData: [DataDetector.Match]) -> [URL] {
+            
+        var urls: [URL] = []
+        for data in extractedData {
+            if case .link(let link) = data.details {
+                urls.append(link.url)
+            }
+        }
         return Array(Set(urls))
     }
 
     
-    private func extractedDataView(_ extractedData: [NSTextCheckingResult]) -> some View {
+    private func extractedDataView(_ extractedData: [DataDetector.Match]) -> some View {
         ForEach(0..<extractedData.count, id: \.self) { index in
             
-            let result: NSTextCheckingResult = extractedData[index]
-            switch result.resultType {
-                
-            case .address:
-                if let components = result.addressComponents {
-                    titleText("Address")
-                    
-                    if let zip = components[.zip] {
-                        Text("Zip: \(zip)")
+            let result: DataDetector.Match = extractedData[index]
+            switch result.details {
+            case .calendarEvent(let calendar):
+                titleText("Calendar Event")
+                Text(String("All day event: \(calendar.allDay)"))
+                HStack {
+                    if let start = calendar.startDate {
+                        Text(String("Start: \(start)"))
                     }
-                    if let state = components[.state] {
-                        Text("State: \(state)")
-                    }
-                    if let city = components[.city] {
-                        Text("City: \(city)")
-                    }
-                    if let street = components[.street] {
-                        Text("Street: \(street)")
+                    if let end = calendar.endDate {
+                        Text(String("End: \(end)"))
                     }
                 }
-                
-            case .date:
-                titleText("Date")
-                if let date = result.date {
-                    Text(date, format: .dateTime)
-                }
-                if let timezone = result.timeZone {
-                    Text("Timezone: \(timezone.identifier)")
-                }
-                
-                let duration = result.duration
-                if duration > 0 {
-                    Text("Duration: \(String(format: "%.2f", duration))")
-                }
-            
-            case .link:
-                if let url = result.url {
-                    titleText("URL")
-                    
-                    Text(url.absoluteString)
-                }
-                
-            case .phoneNumber:
-                if let phoneNumber = result.phoneNumber {
-                    titleText("Phone Number")
-                    
-                    Text(phoneNumber)
-                }
-                
-            // for example: flight information
-            case .transitInformation:
-                if let components = result.components {
-                    titleText("Transit Information")
+            case .link(let link):
+                titleText("URL")
+                Text(link.url.absoluteString)
 
-                    if let airline = components[.airline] {
-                        Text("Airline: \(airline)")
-                    }
-                    if let flight = components[.flight] {
-                        Text("Flight: \(flight)")
-                    }
-
-                }
-
+            case .emailAddress(let email):
+                titleText("Email")
+                Text(email.emailAddress)
                 
-            default:
+            case .phoneNumber(let phone):
+                titleText("Phone Number")
+                Text(phone.phoneNumber)
+                
+            case .postalAddress(let postal):
+                titleText("Postal")
+                Text(postal.fullAddress)
+                
+            case .moneyAmount(let money):
+                titleText("Money")
+                Text(String("\(money.amount) (\(money.currency.identifier))"))
+                
+            case .flightNumber(let flight):
+                titleText("Flight Number")
+                Text("\(flight.airlineCode) \(flight.flightNumber)")
+                
+            case .shipmentTrackingNumber(let tracking):
+                titleText("Shipment Tracking")
+                Text("\(tracking.carrier) \(tracking.trackingNumber)")
+                if let url = tracking.trackingURL {
+                    Button(action: {
+                        openURL(url)
+                    }, label: {
+                        Text("Track Shipment")
+                    })
+                }
+                
+            case .measurement(let measurement):
+                titleText("Measurement")
+                Text("\(measurement.value)")
+
+            case .paymentIdentifier(let payment):
+                titleText("Payment Identifier")
+                Text("\(payment.identifier)")
+
+            @unknown default:
                 EmptyView()
             }
-            
         }
         .font(.subheadline)
         .foregroundStyle(.secondary)

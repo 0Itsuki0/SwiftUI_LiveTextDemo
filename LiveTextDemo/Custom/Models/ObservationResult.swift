@@ -8,12 +8,13 @@
 
 import Vision
 import SwiftUI
+import DataDetection
 
 nonisolated
 struct ObservationResult {
     var string: String
     var boundingQuad: BoundingQuad
-    var extractedData: [NSTextCheckingResult] = []
+    var extractedData: [DataDetector.Match] = []
     
     static func fromBarcodeObservations(_ barcodeObservations: [BarcodeObservation]) -> [ObservationResult] {
         var results: [(String?, BoundingQuad)] = barcodeObservations.compactMap { observation in

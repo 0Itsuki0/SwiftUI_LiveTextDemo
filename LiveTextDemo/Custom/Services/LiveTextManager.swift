@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import DataDetection
 
 @Observable
 class LiveTextManager {
@@ -25,24 +26,12 @@ class LiveTextManager {
     var detectionConfiguration: DetectionConfiguration = .text
     
     private let visionService = VisionService()
-    
-    nonisolated
-    private let detector: NSDataDetector?
-    
+        
     private(set) var observationResults: [ObservationResult] = [] {
         didSet {
             if !observationResults.isEmpty {
                 print(observationResults)
             }
-        }
-    }
-
-    init() {
-        do {
-            self.detector = try NSDataDetector(types: NSTextCheckingAllTypes)
-        } catch(let error) {
-            self.detector = nil
-            self.error = error
         }
     }
     
@@ -97,8 +86,8 @@ class LiveTextManager {
             for var result in results {
                 group.addTask {
                     let text = result.string
-                    let matches = self.detector?.matches(in: text, options: [], range: NSRange(location: 0, length: text.count))
-                    result.extractedData = matches ?? []
+                    let matches = await self.detectData(text)
+                    result.extractedData = matches
                     return result
                 }
 
@@ -113,6 +102,15 @@ class LiveTextManager {
         
         self.observationResults = results
 
+    }
+    
+    private func detectData(_ text: String) async -> [DataDetector.Match] {
+        var matches: [DataDetector.Match] = []
+        for await match in text.dataDetectorMatches([.all]) {
+            matches.append(match)
+        }
+        
+        return matches
     }
 
 }
